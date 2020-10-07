@@ -1,0 +1,108 @@
+package account_test
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	gomock "github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/michaelk99/birrdi/api-soa/internal/token"
+	"gitlab.com/michaelk99/birrdi/api-soa/services/account"
+	"gitlab.com/michaelk99/birrdi/api-soa/services/profile"
+)
+
+func getContext() context.Context {
+	ctx := context.Background()
+	tk := &token.Session{}
+	ctx = context.WithValue(ctx, "Session", tk)
+	ctx = context.WithValue(ctx, "Token", "some-jwt")
+	return ctx
+}
+
+func TestSignup(t *testing.T) {
+	var TestSignupTT = []struct {
+		name   string
+		signup func(ctrl *gomock.Controller, t *testing.T)
+	}{
+		{
+			name: "should throw error if account already exists",
+			signup: func(ctrl *gomock.Controller, t *testing.T) {
+				// setup
+				tc := account.NewMockTokenCreator(ctrl)
+
+				a := account.AccountCredentials{
+					Email:    "test2@email.com",
+					Password: "pass5678%%^&*",
+				}
+
+				// create mock account store
+				as := account.NewMockAccountStore(ctrl)
+				as.EXPECT().FetchByEmail(a.Email).Return([]interface{}{
+					nil, fmt.Errorf("not found"),
+				}...)
+
+				// create mock profile client. not called
+				pc := profile.NewMockClient(ctrl)
+
+				// test our service
+				s := account.NewService(as, tc, pc)
+
+				acc, err := s.SignUp(a)
+
+				// we should see an error
+				assert.NotNil(t, err)
+				// err should be account exists
+				assert.IsType(t, account.ErrUserExists{}, err)
+				// we should have back nil account
+				assert.Nil(t, acc)
+			},
+		},
+		{
+			name: "should signup account",
+			signup: func(ctrl *gomock.Controller, t *testing.T) {
+				// not used in this test
+				tc := account.NewMockTokenCreator(ctrl)
+
+				// create mock account store
+				as := account.NewMockAccountStore(ctrl)
+
+				a := account.AccountCredentials{
+					Email:    "test2@email.com",
+					Password: "pass5678%%^&*",
+				}
+
+				as.EXPECT().FetchByEmail(a.Email).Return([]interface{}{
+					&account.Account{}, nil,
+				}...)
+				as.EXPECT().Create(gomock.Any(), gomock.Any())
+
+				// create mock profile client. not called
+				pc := profile.NewMockClient(ctrl)
+
+				// test our service
+				s := account.NewService(as, tc, pc)
+				acc, err := s.SignUp(a)
+
+				// handle when create passes
+				assert.NotNil(t, acc)
+				assert.Nil(t, err)
+
+				assert.Equal(t, a.Email, acc.Email)
+				assert.NotEmpty(t, acc.CreatedAt)
+				assert.NotEmpty(t, acc.UpdatedAt)
+				assert.NotEmpty(t, acc.Email)
+				assert.NotEmpty(t, acc.ID)
+				assert.NotEmpty(t, acc.Password)
+				assert.True(t, acc.Enabled)
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	for _, tt := range TestSignupTT {
+		tt.signup(ctrl, t)
+	}
+}

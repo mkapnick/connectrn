@@ -1,0 +1,138 @@
+package handlers_test
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	v9 "gopkg.in/go-playground/validator.v9"
+
+	"github.com/golang/mock/gomock"
+	je "gitlab.com/michaelk99/birrdi/api-soa/internal/jsonerr"
+	"gitlab.com/michaelk99/birrdi/api-soa/internal/validator"
+	"gitlab.com/michaelk99/birrdi/api-soa/services/account"
+	"gitlab.com/michaelk99/birrdi/api-soa/services/account/handlers"
+	"github.com/stretchr/testify/assert"
+)
+
+var TestSignUpTT = []struct {
+	// friendly name for test tqble
+	name string
+	// json payload. for request. in a typical case this will be a serialized account.AccountCredentials
+	creds interface{}
+	// the account returned by SignUp
+	acc account.Account
+	// method to make request with
+	method string
+	// whether we expect the signup method to fail. this bool is also used
+	// in determining whether the account service mock's SignUp method is called. When changing
+	// the bools below make sure to flip this bool to true if the mock's Singup method is no longer called.
+	expectSignUpFail bool
+	// whether we expect the http method detection to fail the request.
+	expectMethodFail    bool
+	expectUnmarshalFail bool
+}{
+	// case account successfully created
+	{
+		"no errors",
+		account.AccountCredentials{Email: `<XU@Xc}H3Mf47S)@test1.com`, Password: `Bte(\?]{-h4>wU=L`},
+		account.Account{Email: `<XU@Xc}H3Mf47S)@<XU@Xc}H3Mf47S).com`},
+		"POST",
+		false,
+		false,
+		false,
+	},
+	// case where wrong method is used
+	{
+		"bad method",
+		account.AccountCredentials{Email: `<XU@Xc}H3Mf47S)@test2.com`, Password: `Bte(\?]{-h4>wU=L`},
+		account.Account{Email: `<XU@Xc}H3Mf47S)@<XU@Xc}H3Mf47S).com`},
+		"GET",
+		true,
+		true,
+		false,
+	},
+	{
+		"json unmarshal error",
+		"{}",
+		account.Account{Email: `<XU@Xc}H3Mf47S)@<XU@Xc}H3Mf47S).com`},
+		"POST",
+		true,
+		false,
+		true,
+	},
+}
+
+func TestSignUp(t *testing.T) {
+	// create mock account service
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	for _, tt := range TestSignUpTT {
+		t.Logf("test table: %v", tt.name)
+		// create our mock service to provide to handler
+		s := account.NewMockService(ctrl)
+
+		// create validator
+		V9 := v9.New()
+		validator := validator.NewValidator(V9)
+
+		if !tt.expectSignUpFail {
+			s.EXPECT().SignUp(tt.creds.(account.AccountCredentials)).Return(&tt.acc, nil)
+		}
+
+		// create handler and call
+		h := handlers.SignUp(validator, s)
+
+		b, err := json.Marshal(tt.creds)
+		if err != nil {
+			t.Fatalf("failed to serialize provided credentials: %v", err)
+		}
+		req := httptest.NewRequest(tt.method, "/api/v1/signup", bytes.NewBuffer(b))
+
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, req)
+
+		if tt.expectMethodFail {
+			assert.Equal(t, http.StatusMethodNotAllowed, rr.Code)
+			continue
+		}
+
+		if tt.expectSignUpFail {
+			var resp je.Response
+			err := json.Unmarshal(rr.Body.Bytes(), &resp)
+			if err != nil {
+				t.Fatalf("failed to unmarshal response: %v", err)
+			}
+
+			assert.Equal(t, resp.Code, handlers.SignupErrCode)
+			assert.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
+			continue
+		}
+
+		if tt.expectUnmarshalFail {
+			var resp je.Response
+			err := json.Unmarshal(rr.Body.Bytes(), &resp)
+			if err != nil {
+				t.Fatalf("failed to unmarshal response: %v", err)
+			}
+
+			assert.Equal(t, resp.Code, handlers.SignupErrCode)
+			assert.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
+			continue
+
+		}
+
+		// all errors accounted for. test valid response
+		var a account.Account
+		err = json.Unmarshal(rr.Body.Bytes(), &a)
+		if err != nil {
+			t.Fatalf("failed to unmarshal response: %v", err)
+		}
+
+		assert.Equal(t, http.StatusCreated, rr.Code)
+		assert.Equal(t, tt.acc, a)
+	}
+}
