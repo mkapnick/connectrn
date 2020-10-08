@@ -34,7 +34,7 @@ func Fetch(rs restaurant.Service) http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		restaurantID := vars["restauraunt_id"]
+		restaurantID := vars["restaurant_id"]
 
 		rse, err := rs.FetchRestaurant(restaurantID)
 		if err != nil {

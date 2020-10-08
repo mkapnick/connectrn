@@ -27,6 +27,13 @@ func NewService(ds RestaurantStore) Service {
 }
 
 func (s *service) CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, error) {
+	whereCondition := fmt.Sprintf("name = '%s'", r.Name)
+	rr, _ := s.ds.FetchRestaurantByCondition(whereCondition)
+
+	if rr != nil {
+		return nil, fmt.Errorf("Restaurant with name %s already exists", r.Name)
+	}
+
 	return s.ds.CreateRestaurant(Restaurant{
 		ID:        uuid.New().String(),
 		Name:      r.Name,

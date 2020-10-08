@@ -99,6 +99,7 @@ func main() {
 	r.HandleFunc("/api/v1/profile/", authRequest.Auth(phandlers.CRUD(validator, profileService)))
 
 	// restaurant routes
+	r.HandleFunc("/api/v1/restaurants/", authRequest.Auth(rhandlers.Create(validator, restaurantService))).Methods("POST")
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(rhandlers.Fetch(restaurantService))).Methods("GET")
 
 	// not found route

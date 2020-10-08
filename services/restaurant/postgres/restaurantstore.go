@@ -9,10 +9,11 @@ import (
 // queries are written to use sqlx.NamedExec() method. this method maps "db" struct tags with
 // the : prefixed names in the values parameter
 const (
-	CreateRestaurantQuery          = `INSERT INTO restaurants (id, name, created_at, updated_at) VALUES (:id, :name, :created_at, :updated_at)`
-	CreateTableQuery               = `INSERT INTO tables (id, restaurant_id, name, num_seats_available, num_seats_reserved, start_date, created_at, updated_at) VALUES (:id, :restaurant_id, :name, :num_seats_available, :num_seats_reserved, :start_date, :created_at, :updated_at) `
-	FetchRestaurantQuery           = `SELECT * FROM restaurants WHERE id = $1`
-	FetchAllTablesByConditionQuery = `SELECT * FROM tables WHERE`
+	CreateRestaurantQuery           = `INSERT INTO restaurants (id, name, created_at, updated_at) VALUES (:id, :name, :created_at, :updated_at)`
+	CreateTableQuery                = `INSERT INTO tables (id, restaurant_id, name, num_seats_available, num_seats_reserved, start_date, created_at, updated_at) VALUES (:id, :restaurant_id, :name, :num_seats_available, :num_seats_reserved, :start_date, :created_at, :updated_at) `
+	FetchRestaurantQuery            = `SELECT * FROM restaurants WHERE id = $1`
+	FetchRestaurantByConditionQuery = `SELECT * FROM restaurants WHERE`
+	FetchAllTablesByConditionQuery  = `SELECT * FROM tables WHERE`
 )
 
 // restaurantStore is a private implementation of the restaurant.RestaurantStore interface
@@ -74,6 +75,18 @@ func (s *restaurantStore) FetchRestaurant(id string) (*restaurant.Restaurant, er
 	}
 
 	return &r, nil
+}
+
+func (s *restaurantStore) FetchRestaurantByCondition(whereCondition string) ([]*restaurant.Restaurant, error) {
+	var r []*restaurant.Restaurant
+
+	query := fmt.Sprintf("%s %s", FetchRestaurantByConditionQuery, whereCondition)
+	err := s.db.Select(&r, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func (s *restaurantStore) FetchAllTablesByCondition(whereCondition string) ([]*restaurant.Table, error) {
