@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jmoiron/sqlx"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/gorilla/mux"
 	"net/url"
@@ -65,7 +65,12 @@ func main() {
 	}
 
 	// create profile url
-	profURL, err := url.Parse(ProfileURL)
+	u := ProfileURL
+	// PORT given for heroku deploy
+	if os.Getenv("PORT") != "" {
+		u = fmt.Sprintf("http://localhost:%s/api/v1/profile/", os.Getenv("PORT"))
+	}
+	profURL, err := url.Parse(u)
 	if err != nil {
 		log.Fatalf("Profile URL is not a valid url %s", profURL)
 	}
@@ -131,7 +136,7 @@ func main() {
 	})
 
 	addr := HTTPListenAddr
-	// PORT defined for heroku
+	// PORT given for heroku deploy
 	if os.Getenv("PORT") != "" {
 		addr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	}
