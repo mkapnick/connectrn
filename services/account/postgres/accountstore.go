@@ -11,12 +11,12 @@ import (
 // the : prefixed names in the values parameter
 const (
 	// `account` queries
-	CreateAccountQuery = `INSERT INTO account (id, email, password, enabled, created_at, updated_at)
-VALUES (:id, :email, :password, :enabled, :created_at, :updated_at);`
-	FetchAccountQuery            = `SELECT * FROM account WHERE id = $1;`
-	FetchAccountByEmailQuery     = `SELECT * FROM account WHERE email = $1;`
-	FetchAccountByConditionQuery = `SELECT * FROM account WHERE`
-	FetchRestaurantQuery            = `SELECT id, subdomain FROM company WHERE id = $1`
+	CreateAccountQuery = `INSERT INTO account (id, email, password, created_at, updated_at)
+VALUES (:id, :email, :password, :created_at, :updated_at);`
+	FetchAccountQuery            = `SELECT * FROM accounts WHERE id = $1;`
+	FetchAccountByEmailQuery     = `SELECT * FROM accounts WHERE email = $1;`
+	FetchAccountByConditionQuery = `SELECT * FROM accounts WHERE`
+	FetchRestaurantQuery         = `SELECT id, name FROM restaurant WHERE id = $1`
 )
 
 // accountStore is a private implementation of the account.AccountStoreinterface
