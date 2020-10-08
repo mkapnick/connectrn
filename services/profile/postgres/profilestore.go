@@ -11,8 +11,8 @@ import (
 // the : prefixed names in the values parameter
 const (
 	CreateProfileQuery           = `INSERT INTO profiles (id, account_id, name, created_at, updated_at) VALUES (:id, :account_id, :name, :created_at, :updated_at);`
-	FetchProfileQuery            = `SELECT * FROM profiles WHERE id = $1;`
-	FetchProfileByAccountIDQuery = `SELECT * FROM profiles WHERE account_id = $1`
+	FetchProfileQuery            = `SELECT profiles.*, accounts.email as email FROM profiles JOIN accounts ON profiles.account_id = accounts.id WHERE id = $1;`
+	FetchProfileByAccountIDQuery = `SELECT profiles.*, accounts.email FROM profiles JOIN accounts ON profiles.account_id = accounts.id WHERE account_id = $1`
 )
 
 // profileStore is a private implementation of the profile.ProfileStore interface
