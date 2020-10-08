@@ -12,17 +12,12 @@ import (
 // CustomClaim ability to add custom claim data here
 type CustomClaim struct {
 	jwt.StandardClaims
-	AccountID    string                 `json:"account_id"`
-	ProfileID    string                 `json:"profile_id"`
-	RestaurantID    string                 `json:"company_id"`
-	ClubID       string                 `json:"club_id"`
-	AccountRoles []*account.AccountRole `json:"account_roles"`
+	AccountID    string `json:"account_id"`
+	ProfileID    string `json:"profile_id"`
+	RestaurantID string `json:"company_id"`
 
 	// combine both `account` and `profile` data within the jwt
-	Email       string      `json:"email"`
-	FirstName   string      `json:"first_name"`
-	LastName    string      `json:"last_name"`
-	Preferences interface{} `json:"preferences"`
+	Email string `json:"email"`
 }
 
 // creator creates hmac signed jwt tokens
@@ -46,7 +41,7 @@ func NewCreator(secret, issuer string, exp time.Duration) account.TokenCreator {
 
 // Create method implements the token.Creator interface. Takes a subject string
 // and uses the struct's configured state to fashion an hmac signed token
-func (c *creator) Create(acc *account.Account, prof *profile.Profile, ars []*account.AccountRole) (string, error) {
+func (c *creator) Create(acc *account.Account, prof *profile.Profile) (string, error) {
 	ts := time.Now()
 	iat := ts.Unix()
 	exp := ts.Add(c.expiration).Unix()
@@ -64,12 +59,7 @@ func (c *creator) Create(acc *account.Account, prof *profile.Profile, ars []*acc
 		acc.ID,
 		prof.ID,
 		acc.RestaurantID.String,
-		acc.ClubID.String,
-		ars,
 		acc.Email,
-		prof.FirstName,
-		prof.LastName,
-		prof.Preferences,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	s, err := token.SignedString([]byte(c.secret))

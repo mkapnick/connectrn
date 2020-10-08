@@ -4,16 +4,28 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/gorilla/mux"
+	"net/url"
 
 	_ "github.com/lib/pq"
 	mw "gitlab.com/michaelk99/connectrn/internal/middleware"
 	"gitlab.com/michaelk99/connectrn/internal/token/jwthmac"
-	// "gitlab.com/michaelk99/connectrn/internal/validator"
-	"gitlab.com/michaelk99/connectrn/services/restaurant"
-	"gitlab.com/michaelk99/connectrn/services/restaurant/handlers"
-	"gitlab.com/michaelk99/connectrn/services/restaurant/postgres"
+	"gitlab.com/michaelk99/connectrn/internal/validator"
+	ajwthmac "gitlab.com/michaelk99/connectrn/services/account/jwthmac"
+	"time"
 
-	// v9 "gopkg.in/go-playground/validator.v9"
+	"gitlab.com/michaelk99/connectrn/services/account"
+	"gitlab.com/michaelk99/connectrn/services/profile"
+	"gitlab.com/michaelk99/connectrn/services/restaurant"
+
+	ahandlers "gitlab.com/michaelk99/connectrn/services/account/handlers"
+	phandlers "gitlab.com/michaelk99/connectrn/services/profile/handlers"
+	rhandlers "gitlab.com/michaelk99/connectrn/services/restaurant/handlers"
+
+	apostgres "gitlab.com/michaelk99/connectrn/services/account/postgres"
+	ppostgres "gitlab.com/michaelk99/connectrn/services/profile/postgres"
+	rpostgres "gitlab.com/michaelk99/connectrn/services/restaurant/postgres"
+
+	v9 "gopkg.in/go-playground/validator.v9"
 	"io"
 	"log"
 	"net/http"
@@ -25,8 +37,11 @@ import (
 const (
 	HTTPListenAddr string = "0.0.0.0:3000"
 	PGConnString   string = "host=localhost port=5432 user=postgres dbname=connectrn  sslmode=disable"
-	JWTSecret      string = "fde5247c0262798a9c"
 	PGDriver       string = "postgres"
+	JWTExp         int64  = 65920000000
+	JWTSecret      string = "fde5247c0262798a9c"
+	JWTIssuer      string = "account"
+	ProfileURL     string = "http://localhost:3000/api/v1/profile/"
 )
 
 // root is the root route, used for k8s health checks
@@ -44,13 +59,27 @@ func main() {
 		log.Fatalf("failed to connect to DB: %v", err)
 	}
 
-	// gcds = golf course data source
-	rds := postgres.NewRestaurantStore(dbConn)
+	profURL, err := url.Parse(ProfileURL)
+	if err != nil {
+		log.Fatalf("Profile URL is not a valid url %s", profURL)
+	}
+	pc := profile.NewClient(profURL)
 
-	// v9Validator := v9.New()
-	// validator := validator.NewValidator(v9Validator)
+	// gcds = golf course data source
+	ads := apostgres.NewAccountStore(dbConn)
+	pds := ppostgres.NewProfileStore(dbConn)
+	rds := rpostgres.NewRestaurantStore(dbConn)
+
+	v9Validator := v9.New()
+	validator := validator.NewValidator(v9Validator)
+
+	// create token creator we will use to isssue tokens via login requests
+	exp := time.Duration(JWTExp) * time.Millisecond
+	tc := ajwthmac.NewCreator(JWTSecret, JWTIssuer, exp)
 
 	// create our restaurant service
+	accountService := account.NewService(ads, tc, pc)
+	profileService := profile.NewService(pds)
 	restaurantService := restaurant.NewService(rds)
 
 	// create our auth request middleware
@@ -60,7 +89,16 @@ func main() {
 	r := mux.NewRouter()
 
 	/////////////////// Routes ///////////////////
-	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(handlers.Fetch(restaurantService))).Methods("GET")
+	// acount routes
+	r.HandleFunc("/api/v1/account/", authRequest.Auth(ahandlers.CRUD(accountService)))
+	r.HandleFunc("/api/v1/account/signup/", ahandlers.SignUp(validator, accountService))
+	r.HandleFunc("/api/v1/account/login/", ahandlers.Login(accountService))
+
+	// profile routes
+	r.HandleFunc("/api/v1/profile/", authRequest.Auth(phandlers.CRUD(validator, profileService)))
+
+	// restaurant routes
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(rhandlers.Fetch(restaurantService))).Methods("GET")
 
 	// not found route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

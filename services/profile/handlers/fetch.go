@@ -21,7 +21,7 @@ const (
 // Fetch checks email against password and assigns a token if valid
 func Fetch(ps profile.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support POST
+		// only support GET
 		if r.Method != http.MethodGet {
 			err := errors.New("method not supported [profile fetch]")
 			log.Printf(err.Error())
@@ -68,14 +68,6 @@ func Fetch(ps profile.Service) http.HandlerFunc {
 			query = profile.IDQuery{
 				Type:  profile.AccountID,
 				Value: accountID,
-			}
-		}
-
-		if r.URL.Query().Get("value") != "" {
-			v := r.URL.Query().Get("value")
-			query = profile.IDQuery{
-				Type:  profile.AdminCheckout,
-				Value: v,
 			}
 		}
 
