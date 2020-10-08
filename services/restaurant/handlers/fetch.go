@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	je "gitlab.com/michaelk99/connectrn/internal/jsonerr"
-	"gitlab.com/michaelk99/connectrn/internal/token"
 	"gitlab.com/michaelk99/connectrn/services/restaurant"
 )
 
@@ -37,7 +36,7 @@ func Fetch(rs restaurant.Service) http.HandlerFunc {
 		vars := mux.Vars(r)
 		restaurantID := vars["restauraunt_id"]
 
-		r, err := rs.FetchRestaurant(restaurantID)
+		rse, err := rs.FetchRestaurant(restaurantID)
 		if err != nil {
 			resp := &je.Response{
 				Code:    FetchErrCode,
@@ -49,7 +48,7 @@ func Fetch(rs restaurant.Service) http.HandlerFunc {
 
 		// return created restaurant
 		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(r)
+		err = json.NewEncoder(w).Encode(rse)
 		if err != nil {
 			log.Printf("%s: %v", FetchErrCode, err)
 			resp := &je.Response{

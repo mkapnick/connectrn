@@ -24,7 +24,6 @@ type service struct {
 func NewService(ds ProfileStore) Service {
 	return &service{
 		ds: ds,
-		sc: sc,
 	}
 }
 

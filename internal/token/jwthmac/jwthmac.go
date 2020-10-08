@@ -54,13 +54,9 @@ func (v validator) Validate(tokenString string) (*token.Session, error) {
 	// fill out the session to be used for the lifetime of the request
 	session := token.Session{}
 	session.Email = claims.Email
-	session.FirstName = claims.FirstName
-	session.LastName = claims.LastName
 	session.AccountID = claims.AccountID
 	session.ProfileID = claims.ProfileID
-	session.CompanyID = claims.CompanyID
-	session.ClubID = claims.ClubID
-	session.AccountRoles = claims.AccountRoles
+	session.RestaurantID = claims.RestaurantID
 
 	return &session, nil
 }

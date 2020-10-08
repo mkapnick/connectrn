@@ -54,7 +54,7 @@ func (s *service) FetchAllTables(restaurantID string, startDate string) ([]*Tabl
 
 	whereCondition := fmt.Sprintf("restaurant_id = '%s' AND start_date = '%s'", restaurantID, startDate)
 
-	t, err := s.ds.FetchAllTables(whereCondition)
+	t, err := s.ds.FetchAllTablesByCondition(whereCondition)
 
 	if err != nil {
 		return nil, err

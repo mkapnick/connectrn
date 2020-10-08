@@ -1,20 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"github.com/jmoiron/sqlx"
-	"net/url"
 
 	"github.com/gorilla/mux"
 
 	_ "github.com/lib/pq"
 	mw "gitlab.com/michaelk99/connectrn/internal/middleware"
 	"gitlab.com/michaelk99/connectrn/internal/token/jwthmac"
-	"gitlab.com/michaelk99/connectrn/internal/validator"
+	// "gitlab.com/michaelk99/connectrn/internal/validator"
 	"gitlab.com/michaelk99/connectrn/services/restaurant"
 	"gitlab.com/michaelk99/connectrn/services/restaurant/handlers"
 	"gitlab.com/michaelk99/connectrn/services/restaurant/postgres"
-	v9 "gopkg.in/go-playground/validator.v9"
+
+	// v9 "gopkg.in/go-playground/validator.v9"
 	"io"
 	"log"
 	"net/http"
@@ -48,11 +47,11 @@ func main() {
 	// gcds = golf course data source
 	rds := postgres.NewRestaurantStore(dbConn)
 
-	v9Validator := v9.New()
-	validator := validator.NewValidator(v9Validator)
+	// v9Validator := v9.New()
+	// validator := validator.NewValidator(v9Validator)
 
 	// create our restaurant service
-	restaurantService := restaurant.NewRestaurantService(rds)
+	restaurantService := restaurant.NewService(rds)
 
 	// create our auth request middleware
 	authRequest := mw.NewAuthRequest(jwthmacStore)
@@ -61,7 +60,7 @@ func main() {
 	r := mux.NewRouter()
 
 	/////////////////// Routes ///////////////////
-	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(handlers.FetchRestaurant(restaurantService))).Methods("GET")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(handlers.Fetch(restaurantService))).Methods("GET")
 
 	// not found route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

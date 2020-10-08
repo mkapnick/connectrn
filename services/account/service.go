@@ -1,8 +1,6 @@
 package account
 
 import (
-	"database/sql"
-	"gopkg.in/guregu/null.v3"
 	"regexp"
 	"time"
 
@@ -40,7 +38,6 @@ func NewService(as AccountStore, tc TokenCreator, pc profile.Client) Service {
 		as: as,
 		tc: tc,
 		pc: pc,
-		nc: nc,
 	}
 }
 
@@ -64,25 +61,18 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 		return nil, ErrInternal{msg: "Invalid email"}
 	}
 
-	whereCondition := fmt.Sprintf("company_id IS NULL AND email = '%s'", req.Email)
+	whereCondition := fmt.Sprintf("restaurant_id IS NULL AND email = '%s'", req.Email)
 	_, err := s.as.FetchAccountByCondition(whereCondition)
 	if err == nil {
 		return nil, ErrUserExists{}
 	}
 
-	// Capitalize `first_nase` and `last_nase`, used when creating the profile
-	req.FirstNase = strings.Title(strings.ToLower(req.FirstNase))
-	req.LastNase = strings.Title(strings.ToLower(req.LastNase))
-
 	// create account
 	accountID := uuid.New().String()
 	ts := time.Now().Format(time.RFC3339)
 	a := &Account{
-		ID:    accountID,
-		Email: req.Email,
-		// default to `true`. We can use this field in the future to disable
-		// accounts at will and prevent from logging in using the app
-		Enabled:   true,
+		ID:        accountID,
+		Email:     req.Email,
 		CreatedAt: ts,
 		UpdatedAt: ts,
 	}
@@ -92,14 +82,6 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 	// we need to attach the `profile_id` to the response. The `profile_id`
 	// is used from the response when admins create new users
 	var dbProfile *profile.Profile
-
-	var passwordGen string
-	if req.PasswordGen {
-		// create a unique and random password. Total length: 5 characters
-		// must be at least 4 characters long to get through password validation
-		passwordGen = uuid.New().String()[0:5]
-		req.Password = passwordGen
-	}
 
 	pass, err := crypto.HashPassword(req.Password)
 	if err != nil {
@@ -117,37 +99,8 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 			return ErrInternal{msg: err.Error()}
 		}
 
-		// fetch `golfer` role
-		r, err := s.as.FetchRole("golfer")
-		if err != nil {
-			return ErrInternal{msg: err.Error()}
-		}
-
-		ar := &AccountRole{
-			ID:        uuid.New().String(),
-			AccountID: accountID,
-			// always default to `golfer` role. Admin sign ups are in a
-			// different function
-			RoleID:    r.ID,
-			Authority: r.Authority,
-			// default to `true`. We can use this field in the future to disable
-			// accounts at will and prevent from logging in using the app
-			CreatedAt: ts,
-			UpdatedAt: ts,
-		}
-
-		// create account role
-		_, err = s.as.CreateAccountRole(tx, ar)
-		if err != nil {
-			return ErrInternal{msg: err.Error()}
-		}
-
 		// fashion token [with mock profileID and mock authority]
-		token, err := s.tc.Create(a, &profile.Profile{ID: "-1"}, []*AccountRole{
-			&AccountRole{
-				Authority: "golfer",
-			},
-		})
+		token, err := s.tc.Create(a, &profile.Profile{ID: "-1"})
 
 		// set this now, to be used in noitification email if eligible
 		jwtToken = token
@@ -158,10 +111,7 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 
 		// create profile with mocked token
 		dbProfile, err = s.pc.CreateProfile(token, &profile.Profile{
-			AccountID:   accountID,
-			FirstNase:   req.FirstNase,
-			LastNase:    req.LastNase,
-			PhoneNumber: req.PhoneNumber,
+			AccountID: accountID,
 		})
 
 		if err != nil {
@@ -182,20 +132,6 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 		return nil, ErrInternal{msg: err.Error()}
 	}
 
-	// if `PasswordGen` is true, we send out the account creation email to
-	// the new user
-	if req.PasswordGen {
-		go s.nc.Notify(jwtToken, &notification.NotifyRequest{
-			TemplateNase: notification.TemplateNewAccountFromAdmin,
-			MediumType:   "EMAIL",
-			Context: map[string]string{
-				"golf_course_nase": req.GolfCourseNase,
-				"password":         passwordGen,
-			},
-			Recipients: []string{req.Email},
-		})
-	}
-
 	aa.ProfileID = dbProfile.ID
 	return aa, nil
 }
@@ -206,19 +142,14 @@ func (s *service) LogIn(ctx context.Context, req AccountCredentials) (string, er
 	req.Email = strings.ToLower(req.Email)
 
 	// check if account exists in `db`
-	whereCondition := fmt.Sprintf("company_id IS NULL AND email = '%s'", req.Email)
+	whereCondition := fmt.Sprintf("restaurant_id IS NULL AND email = '%s'", req.Email)
 	if req.RestaurantID != "" {
-		whereCondition = fmt.Sprintf("company_id = '%s' AND email = '%s'", req.RestaurantID, req.Email)
+		whereCondition = fmt.Sprintf("restaurant_id = '%s' AND email = '%s'", req.RestaurantID, req.Email)
 	}
 
 	// simply look
 	a, err := s.as.FetchAccountByCondition(whereCondition)
 	if err != nil {
-		return "", ErrUserNotFound{}
-	}
-
-	// if account is not enabled, return `UserNotFound`
-	if !a.Enabled {
 		return "", ErrUserNotFound{}
 	}
 
@@ -230,11 +161,7 @@ func (s *service) LogIn(ctx context.Context, req AccountCredentials) (string, er
 
 	// fashion token [with mock profileID and mock authority]
 	// a bit hacky - but the mocked token is used to fetch the user's profile
-	token, err := s.tc.Create(a, &profile.Profile{ID: "-1"}, []*AccountRole{
-		&AccountRole{
-			Authority: "golfer",
-		},
-	})
+	token, err := s.tc.Create(a, &profile.Profile{ID: "-1"})
 	if err != nil {
 		return "", ErrCreateToken{err}
 	}
@@ -248,51 +175,8 @@ func (s *service) LogIn(ctx context.Context, req AccountCredentials) (string, er
 		return "", ErrCreateToken{fmt.Errorf("Profile not found for account %s", a.ID)}
 	}
 
-	// fetch all `account_roles`
-	whereCondition = fmt.Sprintf("account_id = '%s'", a.ID)
-	ars, err := s.as.FetchAllAccountRolesByCondition(whereCondition)
-	if err != nil {
-		return "", ErrUserNotFound{}
-	}
-
-	// make sure account has appropriate `companyId` permissions
-	if req.RestaurantID != "" {
-		if a.RestaurantID.String != req.RestaurantID {
-			return "", ErrUserNotFound{}
-		}
-	} else {
-		// make sure at least one `account_role` has a `null` `companyId`
-		ok := false
-		for _, ar := range ars {
-			if ar.RestaurantID.String == "" {
-				ok = true
-			}
-		}
-		if !ok {
-			return "", ErrUserNotFound{}
-		}
-	}
-
-	// make sure account has appropriate `clubId` permissions
-	if req.ClubID != "" {
-		if a.ClubID.String != req.ClubID {
-			return "", ErrUserNotFound{}
-		}
-	} else {
-		// make sure at least one `account_role` has a `null` `clubId`
-		ok := false
-		for _, ar := range ars {
-			if ar.ClubID.String == "" {
-				ok = true
-			}
-		}
-		if !ok {
-			return "", ErrUserNotFound{}
-		}
-	}
-
 	// fashion token again with correct prof ID and authority
-	token, err = s.tc.Create(a, prof, ars)
+	token, err = s.tc.Create(a, prof)
 
 	if err != nil {
 		return "", ErrCreateToken{err}
@@ -323,130 +207,4 @@ func (s *service) Fetch(q IDQuery) (*Account, error) {
 	}
 
 	return a, nil
-}
-
-// Update updates public fields of an account. This method will always update the UpdatedAt
-// timestasp when called with an account.
-func (s *service) Update(acc Account) (*Account, error) {
-	// update timestasps on account
-	ts := time.Now().Format(time.RFC3339)
-	acc.UpdatedAt = ts
-
-	a, err := s.as.UpdateAccount(&acc)
-	if err != nil {
-		return nil, ErrUpdateFail{err}
-	}
-
-	return a, nil
-}
-
-// Update updates public fielas of an account. This method will always update the UpdatedAt
-// timestasp when called with an account.
-func (s *service) CreatePasswordResetToken(r *ForgotPasswordRequest) error {
-	// check if email exists in `db`
-	whereCondition := fmt.Sprintf("company_id IS NULL AND email = '%s'", r.Email)
-	if r.RestaurantID != "" {
-		whereCondition = fmt.Sprintf("company_id = '%s' AND email = '%s'", r.RestaurantID, r.Email)
-	}
-
-	// if `error`, then account not found
-	a, err := s.as.FetchAccountByCondition(whereCondition)
-	if err != nil {
-		return ErrUserNotFound{}
-	}
-
-	// default url is always `app.connectrn.com` [no trailing slash]
-	url := "https://app.connectrn.com/password/reset"
-
-	// if the company exists, we need to get the subdomain
-	if r.RestaurantID != "" {
-		c, err := s.as.FetchRestaurant(r.RestaurantID)
-		// received a bad company [shouldn't happen]
-		if err != nil {
-			return err
-		}
-		// [no trailing slash]
-		url = fmt.Sprintf("https://%s.connectrn.com/password/reset", c.Subdomain)
-	}
-
-	// we aren't done with the url yet. We still need to append the token
-	// once we create it
-
-	// 24 hour expiration on the token
-	expiresAt := time.Now().AddDate(0, 0, 1).Format(time.RFC3339)
-	ts := time.Now().Format(time.RFC3339)
-
-	prt, err := s.as.CreatePasswordResetToken(&PasswordResetToken{
-		ID:        uuid.New().String(),
-		AccountID: a.ID,
-		Email:     r.Email,
-		RestaurantID: null.String{
-			sql.NullString{
-				String: r.RestaurantID,
-				Valid:  r.RestaurantID != "",
-			},
-		},
-		ExpiresAt: expiresAt,
-		CreatedAt: ts,
-		UpdatedAt: ts,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	// set the token on the url
-	url = fmt.Sprintf("%s?token=%s", url, prt.ID)
-
-	// all password reset requests MUST send an email to the `email` passed
-	// in
-	go s.nc.Notify("", &notification.NotifyRequest{
-		TemplateNase: notification.TemplateForgotPassword,
-		MediumType:   "EMAIL",
-		Context: map[string]string{
-			"password_reset_link": url,
-		},
-		Recipients: []string{prt.Email},
-	})
-
-	return nil
-}
-
-func (s *service) FetchPasswordResetToken(ID string) (*PasswordResetToken, error) {
-	return s.as.FetchPasswordResetToken(ID)
-}
-
-func (s *service) UpdatePassword(r *ResetPasswordRequest) error {
-	prt, err := s.as.FetchPasswordResetToken(r.ID)
-	if err != nil {
-		return err
-	}
-
-	if prt.IsUsed {
-		return fmt.Errorf("Password token already used")
-	}
-
-	// TODO look at `expires_at`, make sure not expired
-
-	pass, err := crypto.HashPassword(r.Password)
-	if err != nil {
-		return ErrPasswordHash{}
-	}
-
-	_, err = s.as.UpdateAccount(&Account{
-		ID:       prt.AccountID,
-		Email:    prt.Email,
-		Password: pass,
-	})
-
-	if err != nil {
-		return nil
-	}
-
-	// update reset token to prevent from being used again
-	prt.IsUsed = true
-	prt.UpdatedAt = time.Now().Format(time.RFC3339)
-	_, err = s.as.UpdatePasswordResetToken(prt)
-
-	return err
 }
