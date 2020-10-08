@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// ErrRestaurantNotFound golf course not found
+// ErrRestaurantNotFound  not found
 type ErrRestaurantNotFound struct {
 	msg error
 }
@@ -29,7 +29,7 @@ func (e ErrInternal) Error() string {
 	return "internal error"
 }
 
-// ServiceToHTTPErrorMap maps the golf courses service's errors to http
+// ServiceToHTTPErrorMap maps the s service's errors to http
 func ServiceToHTTPErrorMap(err error) (code int) {
 	switch err.(type) {
 	case ErrRestaurantNotFound:

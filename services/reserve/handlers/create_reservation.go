@@ -25,7 +25,7 @@ func ReserveTable(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 		restaurantID := vars["restaurant_id"]
 		tableID := vars["table_id"]
 
-		// parse tee time reservation data
+		// parse  reservation data
 		var req reserve.ReserveRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -38,7 +38,7 @@ func ReserveTable(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 			return
 		}
 
-		// validate tee time reservation
+		// validate  reservation
 		ok, fieldErrors := v.Struct(req)
 		if !ok {
 			log.Printf("%s: %s", ReserveTableErrCode, "validator.v9 failed")

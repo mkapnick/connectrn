@@ -26,7 +26,7 @@ func CancelReservation(v validator.Validator, rs reserve.Service) http.HandlerFu
 		tableID := vars["table_id"]
 		userReservationID := vars["user_reservation_id"]
 
-		// parse tee time reservation data
+		// parse  reservation data
 		var req reserve.CancelReserveRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -39,7 +39,7 @@ func CancelReservation(v validator.Validator, rs reserve.Service) http.HandlerFu
 			return
 		}
 
-		// validate tee time reservation
+		// validate  reservation
 		ok, fieldErrors := v.Struct(req)
 		if !ok {
 			log.Printf("%s: %s", CancelTableErrCode, "validator.v9 failed")

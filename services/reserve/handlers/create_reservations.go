@@ -24,7 +24,7 @@ func ReserveTables(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 		vars := mux.Vars(r)
 		restaurantID := vars["restaurant_id"]
 
-		// parse tee time reservation data
+		// parse  reservation data
 		var reqs []*reserve.ReserveRequest
 		err := json.NewDecoder(r.Body).Decode(&reqs)
 		if err != nil {
@@ -42,7 +42,7 @@ func ReserveTables(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 
 		// validate and override fields
 		for _, req := range reqs {
-			// validate tee time reservation
+			// validate  reservation
 			ok, fieldErrors := v.Struct(req)
 			if !ok {
 				log.Printf("%s: %s", ReserveTablesErrCode, "validator.v9 failed")
