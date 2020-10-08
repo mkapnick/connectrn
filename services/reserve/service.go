@@ -10,7 +10,7 @@ import (
 type Service interface {
 	// fetch all reserve dates with understood params
 	ReserveTable(req ReserveRequest) (*UserReservation, error)
-	ReserveTables(req []*ReserveRequest) ([]*UserReservation, error)
+	ReserveTables(reqs []*ReserveRequest) ([]*UserReservation, error)
 	CancelReservation(req CancelReserveRequest) (*UserReservationCanceled, error)
 }
 
@@ -88,10 +88,10 @@ func (s *service) ReserveTable(req ReserveRequest) (*UserReservation, error) {
 	return u, err
 }
 
-func (s *service) ReserveTables(req []*ReserveRequest) ([]*UserReservation, error) {
+func (s *service) ReserveTables(reqs []*ReserveRequest) ([]*UserReservation, error) {
 	var uu []*UserReservation
-	for _, re := range req {
-		u, err := s.ReserveTable(*re)
+	for _, req := range reqs {
+		u, err := s.ReserveTable(*req)
 		if err != nil {
 			return nil, err
 		}

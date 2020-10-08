@@ -23,7 +23,6 @@ func ReserveTables(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		restaurantID := vars["restaurant_id"]
-		tableID := vars["table_id"]
 
 		// parse tee time reservation data
 		var reqs []*reserve.ReserveRequest
@@ -56,7 +55,6 @@ func ReserveTables(v validator.Validator, rs reserve.Service) http.HandlerFunc {
 				return
 			}
 			req.RestaurantID = restaurantID
-			req.TableID = tableID
 			req.ProfileID = session.ProfileID
 		}
 
