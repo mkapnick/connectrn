@@ -8,7 +8,7 @@ import (
 
 // Service is a public interface for implementing our Restaurant service
 type Service interface {
-	CreateRestaurant(name string) (*Restaurant, error)
+	CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, error)
 	CreateTable(t Table) (*Table, error)
 	FetchRestaurant(ID string) (*Restaurant, error)
 	FetchAllTables(restaurantID string, startDate string) ([]*Table, error)
@@ -26,10 +26,10 @@ func NewService(ds RestaurantStore) Service {
 	}
 }
 
-func (s *service) CreateRestaurant(name string) (*Restaurant, error) {
+func (s *service) CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, error) {
 	return s.ds.CreateRestaurant(Restaurant{
 		ID:        uuid.New().String(),
-		Name:      name,
+		Name:      r.Name,
 		CreatedAt: time.Now().Format(time.RFC3339),
 		UpdatedAt: time.Now().Format(time.RFC3339),
 	})
