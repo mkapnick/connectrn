@@ -2,7 +2,6 @@ package reserve
 
 // ReserveRequest request
 type ReserveRequest struct {
-	GolfCourseID string `validate:"required" json:"golf_course_id"`
-	StartDate    string `validate:"required" json:"start_date"`
-	EndDate      string `validate:"required" json:"end_date"`
+	TableID string `validate:"required" json:"table_id"`
+	NumSeats    int `validate:"required" json:"num_seats"`
 }
