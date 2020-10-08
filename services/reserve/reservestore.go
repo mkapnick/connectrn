@@ -10,7 +10,7 @@ type ReserveStore interface {
 	FetchTable(restaurantID string, tableID string) (*Table, error)
 	FetchUserReservation(ID string) (*UserReservation, error)
 	CreateUserReservation(tx *sqlx.Tx, r UserReservation) (*UserReservation, error)
-	CreateUserReservationCanceled(tx *sqlx.Tx, r UserReservation) (*UserReservation, error)
+	CreateUserReservationCanceled(tx *sqlx.Tx, r UserReservationCanceled) (*UserReservationCanceled, error)
 	// updates `num_spots_reserved`
 	UpdateTable(tx *sqlx.Tx, t Table) (*Table, error)
 	DeleteUserReservation(tx *sqlx.Tx, r UserReservation) error

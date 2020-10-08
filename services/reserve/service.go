@@ -84,7 +84,8 @@ func (s *service) ReserveTable(req ReserveRequest) (*UserReservation, error) {
 		return nil, err
 	}
 
-	return u, nil
+	err = tx.Commit()
+	return u, err
 }
 
 func (s *service) ReserveTables(req []*ReserveRequest) ([]*UserReservation, error) {
@@ -101,5 +102,57 @@ func (s *service) ReserveTables(req []*ReserveRequest) ([]*UserReservation, erro
 }
 
 func (s *service) CancelReservation(req CancelReserveRequest) (*UserReservationCanceled, error) {
-	return nil, nil
+	// fetch user reservation
+	r, err := s.ds.FetchUserReservation(req.UserReservationID)
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch table
+	t, err := s.ds.FetchTable(req.RestaurantID, req.TableID)
+	if err != nil {
+		return nil, err
+	}
+
+	// begin a transaction
+	tx, err := s.ds.DB().Beginx()
+	if err != nil {
+		return nil, err
+	}
+
+	// will only rollback if no COMMIT occurs
+	defer tx.Rollback()
+
+	// delete the reservation
+	err = s.ds.DeleteUserReservation(tx, *r)
+	if err != nil {
+		return nil, err
+	}
+
+	// create a canceled reservation
+	uc, err := s.ds.CreateUserReservationCanceled(tx, UserReservationCanceled{
+		ID:           r.ID,
+		RestaurantID: r.RestaurantID,
+		TableID:      r.TableID,
+		ProfileID:    r.ProfileID,
+		NumSeats:     r.NumSeats,
+		StartDate:    r.StartDate,
+		CreatedAt:    time.Now().Format(time.RFC3339),
+		UpdatedAt:    time.Now().Format(time.RFC3339),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// update the seats on the table
+	t.NumSeatsReserved = t.NumSeatsReserved + r.NumSeats
+	_, err = s.ds.UpdateTable(tx, *t)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	return uc, err
 }

@@ -18,7 +18,7 @@ type UserReservationCanceled struct {
 	RestaurantID string `json:"restaurant_id" db:"restaurant_id"`
 	TableID      string `json:"table_id" db:"table_id"`
 	ProfileID    string `json:"profile_id" db:"profile_id"`
-	NumSeats     string `json:"num_seats" db:"num_seats"`
+	NumSeats     int `json:"num_seats" db:"num_seats"`
 	StartDate    string `json:"start_date" db:"start_date"`
 	CreatedAt    string `json:"created_at" db:"created_at"`
 	UpdatedAt    string `json:"updated_at" db:"updated_at"`

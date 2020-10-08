@@ -66,7 +66,7 @@ func (s *reserveStore) CreateUserReservation(tx *sqlx.Tx, r reserve.UserReservat
 	return &r, nil
 }
 
-func (s *reserveStore) CreateUserReservationCanceled(tx *sqlx.Tx, r reserve.UserReservation) (*reserve.UserReservation, error) {
+func (s *reserveStore) CreateUserReservationCanceled(tx *sqlx.Tx, r reserve.UserReservationCanceled) (*reserve.UserReservationCanceled, error) {
 	// save `user_tee_time_canceled` in the db
 	row, err := tx.NamedExec(CreateUserReservationCanceledQuery, r)
 	if err != nil {
