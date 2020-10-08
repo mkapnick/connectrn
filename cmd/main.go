@@ -59,13 +59,14 @@ func main() {
 		log.Fatalf("failed to connect to DB: %v", err)
 	}
 
+	// create profile url
 	profURL, err := url.Parse(ProfileURL)
 	if err != nil {
 		log.Fatalf("Profile URL is not a valid url %s", profURL)
 	}
 	pc := profile.NewClient(profURL)
 
-	// gcds = golf course data source
+	// create data sources
 	ads := apostgres.NewAccountStore(dbConn)
 	pds := ppostgres.NewProfileStore(dbConn)
 	rds := rpostgres.NewRestaurantStore(dbConn)
@@ -77,7 +78,7 @@ func main() {
 	exp := time.Duration(JWTExp) * time.Millisecond
 	tc := ajwthmac.NewCreator(JWTSecret, JWTIssuer, exp)
 
-	// create our restaurant service
+	// create our services
 	accountService := account.NewService(ads, tc, pc)
 	profileService := profile.NewService(pds)
 	restaurantService := restaurant.NewService(rds)
