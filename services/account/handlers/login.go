@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -24,18 +23,6 @@ type tokenResponse struct {
 // Login checks email against password and assigns a token if valid
 func Login(s account.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support POST
-		if r.Method != http.MethodPost {
-			err := errors.New("method not supported [login]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    LoginErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, account.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		var loginReq account.AccountCredentials
 		err := json.NewDecoder(r.Body).Decode(&loginReq)
 		if err != nil {

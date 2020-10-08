@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -22,18 +21,6 @@ const (
 // Fetch checks email against password and assigns a token if valid
 func Fetch(s account.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support GET
-		if r.Method != http.MethodGet {
-			err := errors.New("method not supported [square fetch]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    FetchErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, account.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		session := r.Context().Value("Session").(*token.Session)
 
 		idQuery := account.IDQuery{

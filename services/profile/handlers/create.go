@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -24,18 +23,6 @@ const (
 // Create sign up handler
 func Create(v validator.Validator, ps profile.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support POST
-		if r.Method != http.MethodPost {
-			err := errors.New("method not supported [profile create]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    CreateErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, profile.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		var prof profile.Profile
 		err := json.NewDecoder(r.Body).Decode(&prof)
 		if err != nil {

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -21,18 +20,6 @@ const (
 // Fetch checks email against password and assigns a token if valid
 func Fetch(rs restaurant.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support GET
-		if r.Method != http.MethodGet {
-			err := errors.New("method not supported [restaurant fetch]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    FetchErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, restaurant.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		vars := mux.Vars(r)
 		restaurantID := vars["restaurant_id"]
 

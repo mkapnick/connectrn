@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -23,18 +22,6 @@ const (
 // SignUp sign up handler
 func SignUp(v validator.Validator, s account.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support POST
-		if r.Method != http.MethodPost {
-			err := errors.New("method not supported [signup]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    SignupErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, account.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		var signUp account.SignupCredentials
 		err := json.NewDecoder(r.Body).Decode(&signUp)
 		if err != nil {

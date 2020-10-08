@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -23,18 +22,6 @@ const (
 // CreateTable sign up handler
 func CreateTable(v validator.Validator, rs restaurant.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support POST
-		if r.Method != http.MethodPost {
-			err := errors.New("method not supported [restaurant create]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    CreateTableErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, restaurant.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		var cr restaurant.TableCreateRequest
 		err := json.NewDecoder(r.Body).Decode(&cr)
 		if err != nil {

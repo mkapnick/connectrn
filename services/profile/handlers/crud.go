@@ -10,7 +10,6 @@ import (
 // CRUD forwards request based on http method
 func CRUD(v validator.Validator, ps profile.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		switch r.Method {
 		case http.MethodGet:
 			Fetch(ps).ServeHTTP(w, r)

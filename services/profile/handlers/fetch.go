@@ -21,18 +21,6 @@ const (
 // Fetch checks email against password and assigns a token if valid
 func Fetch(ps profile.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// only support GET
-		if r.Method != http.MethodGet {
-			err := errors.New("method not supported [profile fetch]")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    FetchErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, profile.ServiceToHTTPErrorMap(err))
-			return
-		}
-
 		// req can look like the following:
 		session := r.Context().Value("Session").(*token.Session)
 		id := session.ProfileID
