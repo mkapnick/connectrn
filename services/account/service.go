@@ -1,6 +1,8 @@
 package account
 
 import (
+	"database/sql"
+	"gopkg.in/guregu/null.v3"
 	"regexp"
 	"time"
 
@@ -62,6 +64,16 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 	}
 
 	whereCondition := fmt.Sprintf("restaurant_id IS NULL AND email = '%s'", req.Email)
+
+	// make sure to check account with `restaurant_id` not null if it's provided
+	// on the request.
+	if req.RestaurantID != "" {
+		whereCondition = fmt.Sprintf("restaurant_id = '%s' AND email = '%s'", req.RestaurantID, req.Email)
+	}
+
+	// TODO ideally we check to see if this restaurant exists before blindly
+	// assigning to this account.
+
 	_, err := s.as.FetchAccountByCondition(whereCondition)
 	if err == nil {
 		return nil, ErrUserExists{}
@@ -71,8 +83,14 @@ func (s *service) SignUp(req SignupCredentials) (*Account, error) {
 	accountID := uuid.New().String()
 	ts := time.Now().Format(time.RFC3339)
 	a := &Account{
-		ID:        accountID,
-		Email:     req.Email,
+		ID:    accountID,
+		Email: req.Email,
+		RestaurantID: null.String{
+			sql.NullString{
+				String: req.RestaurantID,
+				Valid:  req.RestaurantID != "",
+			},
+		},
 		CreatedAt: ts,
 		UpdatedAt: ts,
 	}

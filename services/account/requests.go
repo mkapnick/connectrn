@@ -12,4 +12,5 @@ type AccountCredentials struct {
 type SignupCredentials struct {
 	Email       string `validate:"required" json:"email"`
 	Password    string `validate:"required,gte=4" json:"password"`
+	RestaurantID string `json:"restaurant_id"`
 }
