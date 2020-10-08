@@ -49,7 +49,7 @@ CREATE TABLE user_reservations (
     start_date timestamp NOT NULL,
     created_at timestamp NOT NULL,
     updated_at timestamp NOT NULL
-)
+);
 
 CREATE TABLE user_reservations_canceled (
     id varchar(255) PRIMARY KEY,
@@ -60,4 +60,4 @@ CREATE TABLE user_reservations_canceled (
     start_date timestamp NOT NULL,
     created_at timestamp NOT NULL,
     updated_at timestamp NOT NULL
-)
+);

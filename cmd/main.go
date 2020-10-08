@@ -38,13 +38,14 @@ import (
 )
 
 const (
-	HTTPListenAddr string = "0.0.0.0:3000"
-	PGConnString   string = "host=localhost port=5432 user=postgres dbname=connectrn  sslmode=disable"
-	PGDriver       string = "postgres"
-	JWTExp         int64  = 65920000000
-	JWTSecret      string = "fde5247c0262798a9c"
-	JWTIssuer      string = "account"
-	ProfileURL     string = "http://localhost:3000/api/v1/profile/"
+	HTTPListenAddr   string = "0.0.0.0:3000"
+	PGConnString     string = "host=localhost port=5432 user=postgres dbname=connectrn  sslmode=disable"
+	PGConnStringProd string = "dbname=demr1kiodqv0ud host=ec2-50-17-197-184.compute-1.amazonaws.com port=5432 user=mrfhdtkblhacsc password=4397968a3602eab9c5ead4e4c6d6ab84cd183ee2f3cebb635982dd111ce34b36 sslmode=require"
+	PGDriver         string = "postgres"
+	JWTExp           int64  = 65920000000
+	JWTSecret        string = "fde5247c0262798a9c"
+	JWTIssuer        string = "account"
+	ProfileURL       string = "http://localhost:3000/api/v1/profile/"
 )
 
 // root is the root route, used for k8s health checks
@@ -57,7 +58,7 @@ func main() {
 	jwthmacStore := jwthmac.NewTokenStore([]byte(JWTSecret), "HMAC")
 
 	// create conn to db
-	dbConn, err := sqlx.Connect(PGDriver, PGConnString)
+	dbConn, err := sqlx.Connect(PGDriver, PGConnStringProd)
 	if err != nil {
 		log.Fatalf("failed to connect to DB: %v", err)
 	}
