@@ -40,7 +40,7 @@ func (s *service) ReserveTable(req ReserveRequest) (*UserReservation, error) {
 		return nil, err
 	}
 	// compare dates
-	if ti.Before(today) {
+	if today.Sub(ti).Hours() > 24 {
 		return nil, errors.New("cannot reserve a table in the past")
 	}
 
