@@ -12,6 +12,8 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	google.golang.org/appengine v1.6.6 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/guregu/null.v3 v3.5.0
 )
