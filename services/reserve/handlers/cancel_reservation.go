@@ -13,9 +13,9 @@ import (
 
 const (
 	// CancelTableErrCode code
-	CancelTableErrCode = "reservation.table.reserve.error"
+	CancelTableErrCode = "reservation.table.cancel.error"
 	// CancelBadDataCode code
-	CancelBadDataCode = "reservation.table.reserve.bad_data"
+	CancelBadDataCode = "reservation.table.cancel.bad_data"
 )
 
 // CancelReservation cancels a reservation

@@ -146,7 +146,7 @@ func (s *service) CancelReservation(req CancelReserveRequest) (*UserReservationC
 	}
 
 	// update the seats on the table
-	t.NumSeatsReserved = t.NumSeatsReserved + r.NumSeats
+	t.NumSeatsReserved = t.NumSeatsReserved - r.NumSeats
 	_, err = s.ds.UpdateTable(tx, *t)
 
 	if err != nil {
