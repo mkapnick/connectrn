@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jmoiron/sqlx"
+	"fmt"
 
 	"github.com/gorilla/mux"
 	"net/url"
@@ -129,9 +130,15 @@ func main() {
 		root(w, r)
 	})
 
+	addr := HTTPListenAddr
+	// PORT defined for heroku
+	if os.Getenv("PORT") != "" {
+		addr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	}
+
 	// create server and launch in go routine
 	s := http.Server{
-		Addr:    HTTPListenAddr,
+		Addr:    addr,
 		Handler: r,
 	}
 
