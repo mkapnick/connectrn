@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/crgimenes/goconfig"
 	"github.com/jmoiron/sqlx"
 	"net/url"
 
@@ -12,9 +11,9 @@ import (
 	mw "gitlab.com/michaelk99/connectrn/internal/middleware"
 	"gitlab.com/michaelk99/connectrn/internal/token/jwthmac"
 	"gitlab.com/michaelk99/connectrn/internal/validator"
-	"gitlab.com/michaelk99/connectrn/services/reserve"
-	"gitlab.com/michaelk99/connectrn/services/reserve/handlers"
-	"gitlab.com/michaelk99/connectrn/services/reserve/postgres"
+	"gitlab.com/michaelk99/connectrn/services/restaurant"
+	"gitlab.com/michaelk99/connectrn/services/restaurant/handlers"
+	"gitlab.com/michaelk99/connectrn/services/restaurant/postgres"
 	v9 "gopkg.in/go-playground/validator.v9"
 	"io"
 	"log"
@@ -24,14 +23,12 @@ import (
 	"syscall"
 )
 
-// Config this struct is using the goconfig library for simple flag and env var
-// parsing. See: https://github.com/crgimenes/goconfig
-type Config struct {
-	HTTPListenAddr  string `cfgDefault:"0.0.0.0:3000" cfg:"MAIN_HTTP_LISTEN_ADDR"`
-	JWTSecret       string `cfgDefault:"fde5247c0262798a9c" cfg:"JWT_SECRET"`
-	PGConnString    string `cfgDefault:"host=localhost port=5432 user=postgres dbname=connectrn  sslmode=disable" cfg:"POSTGRES_CONN_STRING"`
-	PGDriver        string `cfgDefault:"postgres" cfg:"POSTGRES_DRIVER"`
-}
+const (
+	HTTPListenAddr string = "0.0.0.0:3000"
+	PGConnString   string = "host=localhost port=5432 user=postgres dbname=connectrn  sslmode=disable"
+	JWTSecret      string = "fde5247c0262798a9c"
+	PGDriver       string = "postgres"
+)
 
 // root is the root route, used for k8s health checks
 func root(res http.ResponseWriter, req *http.Request) {
@@ -39,30 +36,23 @@ func root(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	// parse our config
-	conf := Config{}
-	err := goconfig.Parse(&conf)
-	if err != nil {
-		log.Fatalf("failed to parse config: %v", err)
-	}
-
 	// create token store, which will be used to handle jwt authentication
-	jwthmacStore := jwthmac.NewTokenStore([]byte(conf.JWTSecret), "HMAC")
+	jwthmacStore := jwthmac.NewTokenStore([]byte(JWTSecret), "HMAC")
 
 	// create conn to db
-	dbConn, err := sqlx.Connect(conf.PGDriver, conf.PGConnString)
+	dbConn, err := sqlx.Connect(PGDriver, PGConnString)
 	if err != nil {
 		log.Fatalf("failed to connect to DB: %v", err)
 	}
 
 	// gcds = golf course data source
-	gcds := postgres.NewGolfCourseStore(dbConn)
+	rds := postgres.NewRestaurantStore(dbConn)
 
 	v9Validator := v9.New()
 	validator := validator.NewValidator(v9Validator)
 
-	// create our reserve service
-	reserveService := reserve.NewGolfCourseService(gcds, cache, nc, sc)
+	// create our restaurant service
+	restaurantService := restaurant.NewRestaurantService(rds)
 
 	// create our auth request middleware
 	authRequest := mw.NewAuthRequest(jwthmacStore)
@@ -71,7 +61,7 @@ func main() {
 	r := mux.NewRouter()
 
 	/////////////////// Routes ///////////////////
-	r.HandleFunc("/api/v2/golf-courses/{golf_course_id}/tee-times/{tee_time_id}/user-tee-times/{user_tee_time_id}/", authRequest.Auth(handlers.UpdateUserTeeTime(validator, reserveService))).Methods("PATCH")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(handlers.FetchRestaurant(restaurantService))).Methods("GET")
 
 	// not found route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +76,7 @@ func main() {
 
 	// create server and launch in go routine
 	s := http.Server{
-		Addr:    conf.HTTPListenAddr,
+		Addr:    HTTPListenAddr,
 		Handler: r,
 	}
 
