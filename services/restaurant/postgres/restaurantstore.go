@@ -12,7 +12,7 @@ const (
 	CreateRestaurantQuery           = `INSERT INTO restaurants (id, name, created_at, updated_at) VALUES (:id, :name, :created_at, :updated_at)`
 	CreateTableQuery                = `INSERT INTO tables (id, restaurant_id, name, num_seats_available, num_seats_reserved, start_date, created_at, updated_at) VALUES (:id, :restaurant_id, :name, :num_seats_available, :num_seats_reserved, :start_date, :created_at, :updated_at)`
 	FetchRestaurantQuery            = `SELECT * FROM restaurants WHERE id = $1`
-	FetchTableQuery                 = `SELECT * FROM tables WHERE id = $1`
+	FetchTableQuery                 = `SELECT * FROM tables WHERE restaurant_id = $1 AND id = $2`
 	FetchTableByConditionQuery      = `SELECT * FROM tables WHERE`
 	FetchRestaurantByConditionQuery = `SELECT * FROM restaurants WHERE`
 	FetchAllTablesByConditionQuery  = `SELECT * FROM tables WHERE`
@@ -79,10 +79,10 @@ func (s *restaurantStore) FetchRestaurant(ID string) (*restaurant.Restaurant, er
 	return &r, nil
 }
 
-func (s *restaurantStore) FetchTable(ID string) (*restaurant.Table, error) {
+func (s *restaurantStore) FetchTable(restaurantID string, ID string) (*restaurant.Table, error) {
 	var t restaurant.Table
 
-	err := s.db.Get(&t, FetchTableQuery, ID)
+	err := s.db.Get(&t, FetchTableQuery, restaurantID, ID)
 
 	if err != nil {
 		return nil, err

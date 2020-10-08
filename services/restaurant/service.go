@@ -11,6 +11,7 @@ type Service interface {
 	CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, error)
 	CreateTable(tr TableCreateRequest) (*Table, error)
 	FetchRestaurant(ID string) (*Restaurant, error)
+	FetchTable(restaurantID string, tableID string) (*Table, error)
 	FetchAllTables(restaurantID string, startDate string) ([]*Table, error)
 }
 
@@ -79,13 +80,17 @@ func (s *service) FetchRestaurant(ID string) (*Restaurant, error) {
 	return s.ds.FetchRestaurant(ID)
 }
 
+func (s *service) FetchTable(restaurantID string, tableID string) (*Table, error) {
+	return s.ds.FetchTable(restaurantID, tableID)
+}
+
 func (s *service) FetchAllTables(restaurantID string, startDate string) ([]*Table, error) {
 	_, err := s.ds.FetchRestaurant(restaurantID)
 	if err != nil {
 		return nil, err
 	}
 
-	whereCondition := fmt.Sprintf("restaurant_id = '%s' AND start_date = '%s'", restaurantID, startDate)
+	whereCondition := fmt.Sprintf("restaurant_id = '%s' AND start_date >= '%s'::date AND start_date < '%s'::date + '1 day'::interval", restaurantID, startDate, startDate)
 
 	t, err := s.ds.FetchAllTablesByCondition(whereCondition)
 

@@ -103,8 +103,8 @@ func main() {
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/", authRequest.Auth(rhandlers.Fetch(restaurantService))).Methods("GET")
 
 	// restaurant table routes
-	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/", authRequest.Auth(rhandlers.Create(validator, restaurantService))).Methods("GET")
-	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/{table_id}/", authRequest.Auth(rhandlers.Create(validator, restaurantService))).Methods("GET")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/", authRequest.Auth(rhandlers.FetchAllTables(restaurantService))).Methods("GET")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/{table_id}/", authRequest.Auth(rhandlers.FetchTable(restaurantService))).Methods("GET")
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/", authRequest.Auth(rhandlers.CreateTable(validator, restaurantService))).Methods("POST")
 
 	// not found route

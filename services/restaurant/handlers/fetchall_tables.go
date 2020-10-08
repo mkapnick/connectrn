@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"strings"
 
 	je "gitlab.com/michaelk99/connectrn/internal/jsonerr"
 	"gitlab.com/michaelk99/connectrn/services/restaurant"
@@ -21,18 +21,8 @@ const (
 // FetchAllTables fetch all restaurant tables
 func FetchAllTables(rs restaurant.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ids := r.URL.Query().Get("restaurant_ids")
-
-		if ids == "" {
-			err := errors.New("restaurant_ids is a required field")
-			log.Printf(err.Error())
-			resp := &je.Response{
-				Code:    FetchAllErrCode,
-				Message: err.Error(),
-			}
-			je.Error(r, w, resp, restaurant.ServiceToHTTPErrorMap(err))
-			return
-		}
+		vars := mux.Vars(r)
+		restaurantID := vars["restaurant_id"]
 
 		date := r.URL.Query().Get("date")
 		if date == "" {
@@ -46,7 +36,7 @@ func FetchAllTables(rs restaurant.Service) http.HandlerFunc {
 			return
 		}
 
-		ts, err := rs.FetchAllTables(strings.Split(ids, ","), date)
+		ts, err := rs.FetchAllTables(restaurantID, date)
 		if err != nil {
 			resp := &je.Response{
 				Code:    FetchAllErrCode,
