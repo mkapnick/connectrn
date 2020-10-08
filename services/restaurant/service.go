@@ -9,7 +9,7 @@ import (
 // Service is a public interface for implementing our Restaurant service
 type Service interface {
 	CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, error)
-	CreateTable(t Table) (*Table, error)
+	CreateTable(tr TableCreateRequest) (*Table, error)
 	FetchRestaurant(ID string) (*Restaurant, error)
 	FetchAllTables(restaurantID string, startDate string) ([]*Table, error)
 }
@@ -42,11 +42,37 @@ func (s *service) CreateRestaurant(r RestaurantCreateRequest) (*Restaurant, erro
 	})
 }
 
-func (s *service) CreateTable(t Table) (*Table, error) {
-	t.ID = uuid.New().String()
-	t.CreatedAt = uuid.New().String()
-	t.UpdatedAt = uuid.New().String()
-	return s.ds.CreateTable(t)
+func (s *service) CreateTable(tr TableCreateRequest) (*Table, error) {
+	// make sure the restaurant is valid
+	_, err := s.ds.FetchRestaurant(tr.RestaurantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure the table name is valid [no repeat tables]
+	whereCondition := fmt.Sprintf("restaurant_id = '%s' AND name = '%s'", tr.RestaurantID, tr.Name)
+	t, _ := s.ds.FetchTableByCondition(whereCondition)
+	if t != nil {
+		return nil, fmt.Errorf("table name %s already exists", tr.Name)
+	}
+
+	// make sure time is valid
+	_, err = time.Parse(time.RFC3339, tr.StartDate)
+	if err != nil {
+		return nil, err
+	}
+
+	// valid table
+	return s.ds.CreateTable(Table{
+		ID:                uuid.New().String(),
+		RestaurantID:      tr.RestaurantID,
+		Name:              tr.Name,
+		NumSeatsAvailable: tr.NumSeatsAvailable,
+		NumSeatsReserved:  tr.NumSeatsReserved,
+		StartDate:         tr.StartDate,
+		CreatedAt:         time.Now().Format(time.RFC3339),
+		UpdatedAt:         time.Now().Format(time.RFC3339),
+	})
 }
 
 func (s *service) FetchRestaurant(ID string) (*Restaurant, error) {
