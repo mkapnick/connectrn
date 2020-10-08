@@ -56,7 +56,8 @@ crude and naive but it's simple for the purpose of the assignment
 
 **>>>> As a User, at any given point, I want to check which tables are free and of what
 capacity**
-- [GET Restaurant tables]
+- The following endpoint will accomplish this:
+- `[GET Restaurant tables]`
 
 # Video Demo
 [![Demo](https://img.youtube.com/vi/KNeQbMrvGZU/0.jpg)](https://www.youtube.com/watch?v=KNeQbMrvGZU "Demo")
