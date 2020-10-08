@@ -11,7 +11,7 @@ import (
 // the : prefixed names in the values parameter
 const (
 	// `account` queries
-	CreateAccountQuery = `INSERT INTO account (id, email, password, created_at, updated_at)
+	CreateAccountQuery = `INSERT INTO accounts (id, email, password, created_at, updated_at)
 VALUES (:id, :email, :password, :created_at, :updated_at);`
 	FetchAccountQuery            = `SELECT * FROM accounts WHERE id = $1;`
 	FetchAccountByEmailQuery     = `SELECT * FROM accounts WHERE email = $1;`
