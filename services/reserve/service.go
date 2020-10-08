@@ -124,7 +124,7 @@ func (s *service) CancelReservation(req CancelReserveRequest) (*UserReservationC
 	defer tx.Rollback()
 
 	// delete the reservation
-	err = s.ds.DeleteUserReservation(tx, *r)
+	err = s.ds.DeleteUserReservation(tx, r.ID)
 	if err != nil {
 		return nil, err
 	}

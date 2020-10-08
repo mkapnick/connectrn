@@ -24,6 +24,7 @@ func CancelReservation(v validator.Validator, rs reserve.Service) http.HandlerFu
 		vars := mux.Vars(r)
 		restaurantID := vars["restaurant_id"]
 		tableID := vars["table_id"]
+		userReservationID := vars["user_reservation_id"]
 
 		// parse tee time reservation data
 		var req reserve.CancelReserveRequest
@@ -54,6 +55,7 @@ func CancelReservation(v validator.Validator, rs reserve.Service) http.HandlerFu
 		// override fields
 		req.RestaurantID = restaurantID
 		req.TableID = tableID
+		req.UserReservationID = userReservationID
 
 		// add the `profile_id` to the request
 		session := r.Context().Value("Session").(*token.Session)

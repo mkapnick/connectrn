@@ -13,7 +13,7 @@ type ReserveStore interface {
 	CreateUserReservationCanceled(tx *sqlx.Tx, r UserReservationCanceled) (*UserReservationCanceled, error)
 	// updates `num_spots_reserved`
 	UpdateTable(tx *sqlx.Tx, t Table) (*Table, error)
-	DeleteUserReservation(tx *sqlx.Tx, r UserReservation) error
+	DeleteUserReservation(tx *sqlx.Tx, ID string) error
 	// For transaction purposes only
 	DB() *sqlx.DB
 }

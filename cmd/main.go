@@ -15,14 +15,17 @@ import (
 
 	"gitlab.com/michaelk99/connectrn/services/account"
 	"gitlab.com/michaelk99/connectrn/services/profile"
+	"gitlab.com/michaelk99/connectrn/services/reserve"
 	"gitlab.com/michaelk99/connectrn/services/restaurant"
 
 	ahandlers "gitlab.com/michaelk99/connectrn/services/account/handlers"
 	phandlers "gitlab.com/michaelk99/connectrn/services/profile/handlers"
+	rehandlers "gitlab.com/michaelk99/connectrn/services/reserve/handlers"
 	rhandlers "gitlab.com/michaelk99/connectrn/services/restaurant/handlers"
 
 	apostgres "gitlab.com/michaelk99/connectrn/services/account/postgres"
 	ppostgres "gitlab.com/michaelk99/connectrn/services/profile/postgres"
+	repostgres "gitlab.com/michaelk99/connectrn/services/reserve/postgres"
 	rpostgres "gitlab.com/michaelk99/connectrn/services/restaurant/postgres"
 
 	v9 "gopkg.in/go-playground/validator.v9"
@@ -70,6 +73,7 @@ func main() {
 	ads := apostgres.NewAccountStore(dbConn)
 	pds := ppostgres.NewProfileStore(dbConn)
 	rds := rpostgres.NewRestaurantStore(dbConn)
+	reds := repostgres.NewReserveStore(dbConn)
 
 	v9Validator := v9.New()
 	validator := validator.NewValidator(v9Validator)
@@ -82,6 +86,7 @@ func main() {
 	accountService := account.NewService(ads, tc, pc)
 	profileService := profile.NewService(pds)
 	restaurantService := restaurant.NewService(rds)
+	reserveService := reserve.NewService(reds)
 
 	// create our auth request middleware
 	authRequest := mw.NewAuthRequest(jwthmacStore)
@@ -106,6 +111,11 @@ func main() {
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/", authRequest.Auth(rhandlers.FetchAllTables(restaurantService))).Methods("GET")
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/{table_id}/", authRequest.Auth(rhandlers.FetchTable(restaurantService))).Methods("GET")
 	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/", authRequest.Auth(rhandlers.CreateTable(validator, restaurantService))).Methods("POST")
+
+	// reserve routes
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/{table_id}/reserve/", authRequest.Auth(rehandlers.ReserveTable(validator, reserveService))).Methods("POST")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/reserve/", authRequest.Auth(rehandlers.ReserveTables(validator, reserveService))).Methods("POST")
+	r.HandleFunc("/api/v1/restaurants/{restaurant_id}/tables/{table_id}/reservations/{user_reservation_id}/cancel/", authRequest.Auth(rehandlers.CancelReservation(validator, reserveService))).Methods("POST")
 
 	// not found route
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

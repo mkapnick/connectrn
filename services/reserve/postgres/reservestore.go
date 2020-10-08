@@ -9,6 +9,7 @@ import (
 // queries are written to use sqlx.NamedExec() method. this method maps "db" struct tags with
 // the : prefixed names in the values parameter
 const (
+	FetchUserReservationQuery          = `SELECT * FROM user_reservations WHERE id = $1`
 	CreateUserReservationQuery         = `INSERT INTO user_reservations (id, restaurant_id, table_id, profile_id, num_seats, start_date, created_at, updated_at) VALUES (:id, :restaurant_id, :table_id, :profile_id, :num_seats, :start_date, :created_at, :updated_at)`
 	CreateUserReservationCanceledQuery = `INSERT INTO user_reservations_canceled (id, restaurant_id, table_id, profile_id, num_seats, start_date, created_at, updated_at) VALUES (:id, :restaurant_id, :table_id, :profile_id, :num_seats, :start_date, :created_at, :updated_at)`
 	DeleteUserReservationQuery         = `DELETE FROM user_reservations WHERE id = $1`
@@ -46,6 +47,18 @@ func (s *reserveStore) FetchTable(restaurantID string, tableID string) (*reserve
 	}
 
 	return &t, nil
+}
+
+func (s *reserveStore) FetchUserReservation(ID string) (*reserve.UserReservation, error) {
+	var ur reserve.UserReservation
+
+	err := s.db.Get(&ur, FetchUserReservationQuery, ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ur, nil
 }
 
 func (s *reserveStore) CreateUserReservation(tx *sqlx.Tx, r reserve.UserReservation) (*reserve.UserReservation, error) {
