@@ -14,7 +14,7 @@ type CustomClaim struct {
 	jwt.StandardClaims
 	AccountID    string `json:"account_id"`
 	ProfileID    string `json:"profile_id"`
-	RestaurantID string `json:"company_id"`
+	RestaurantID string `json:"restaurant_id"`
 
 	// combine both `account` and `profile` data within the jwt
 	Email string `json:"email"`
