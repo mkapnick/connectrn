@@ -10,9 +10,9 @@ import (
 // queries are written to use sqlx.NamedExec() method. this method maps "db" struct tags with
 // the : prefixed names in the values parameter
 const (
-	CreateProfileQuery               = `INSERT INTO profiles (id, account_id, first_name, last_name, phone_number, created_at, updated_at) VALUES (:id, :account_id, :first_name, :last_name, :phone_number, :created_at, :updated_at);`
-	FetchProfileQuery                = `SELECT * FROM profiles WHERE id = $1;`
-	FetchProfileByAccountIDQuery     = `SELECT * FROM profiles WHERE account_id = $1`
+	CreateProfileQuery           = `INSERT INTO profiles (id, account_id, name, created_at, updated_at) VALUES (:id, :account_id, :name, :created_at, :updated_at);`
+	FetchProfileQuery            = `SELECT * FROM profiles WHERE id = $1;`
+	FetchProfileByAccountIDQuery = `SELECT * FROM profiles WHERE account_id = $1`
 )
 
 // profileStore is a private implementation of the profile.ProfileStore interface

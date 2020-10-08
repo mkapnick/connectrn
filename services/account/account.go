@@ -7,7 +7,7 @@ import (
 // Account is a retrieved and account
 type Account struct {
 	ID         string      `json:"id" db:"id"`
-	RestaurantID  null.String `json:"company_id" db:"company_id"`
+	RestaurantID  null.String `json:"restaurant_id" db:"restaurant_id"`
 	Email      string      `json:"email" db:"email"`
 	Password   string      `json:"-" db:"password"`
 	CreatedAt  string      `json:"created_at" db:"created_at"`
@@ -18,8 +18,7 @@ type Account struct {
 	ProfileID string `json:"profile_id"`
 }
 
-// Restaurant retrieves a company subdomain
+// Restaurant retrieves a restaurant subdomain
 type Restaurant struct {
 	ID        string `json:"id" db:"id"`
-	Subdomain string `json:"subdomain" db:"subdomain"`
 }
